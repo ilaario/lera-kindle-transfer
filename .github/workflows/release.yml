@@ -6,9 +6,12 @@ on:
       tag:
         description: "Release tag to publish assets to"
         required: true
-        default: "v1.0.0"
+        default: "v1.0.1"
   push:
     tags: ["v*"]
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
 permissions:
   contents: write
@@ -40,20 +43,26 @@ jobs:
 
       - name: Build macOS DMG
         if: runner.os == 'macOS'
-        run: ./gradlew clean build packageMacDmg
+        run: |
+          APP_VERSION="${RELEASE_TAG#v}"
+          ./gradlew clean build packageMacDmg -PappVersion="$APP_VERSION"
+          mkdir -p build/release
+          cp build/jpackage/dmg/*.dmg build/release/Lera-Kindle-Transfer-macos.dmg
 
       - name: Build Windows app image
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          .\gradlew.bat clean build packageAppImage
+          $appVersion = $env:RELEASE_TAG -replace '^v', ''
+          .\gradlew.bat clean build packageAppImage "-PappVersion=$appVersion"
           New-Item -ItemType Directory -Force -Path build\release | Out-Null
           Compress-Archive -Path "build\jpackage\windows\app-image\Lera Kindle Transfer" -DestinationPath "build\release\Lera-Kindle-Transfer-windows-x64.zip" -Force
 
       - name: Build Linux app image
         if: runner.os == 'Linux'
         run: |
-          ./gradlew clean build packageAppImage
+          APP_VERSION="${RELEASE_TAG#v}"
+          ./gradlew clean build packageAppImage -PappVersion="$APP_VERSION"
           mkdir -p build/release
           tar -C "build/jpackage/linux/app-image" -czf "build/release/Lera-Kindle-Transfer-linux-x64.tar.gz" "Lera Kindle Transfer"
 
@@ -62,7 +71,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
-          path: build/jpackage/dmg/*.dmg
+          path: build/release/*.dmg
 
       - name: Upload Windows artifact
         if: runner.os == 'Windows'
@@ -94,7 +103,7 @@ jobs:
       - name: Publish release assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          tag_name: ${{ env.RELEASE_TAG }}
           files: release-artifacts/*
           generate_release_notes: true
           overwrite_files: true

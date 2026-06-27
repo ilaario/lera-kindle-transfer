@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.lerakindletransfer'
-version = '1.0.0'
+version = providers.gradleProperty('appVersion').orElse('1.0.1').get()
 
 def distAppName = 'lera-kindle-transfer'
 def macAppName = 'Lera Kindle Transfer'

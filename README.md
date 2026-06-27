@@ -86,7 +86,7 @@ git tag v1.0.1
 git push origin v1.0.1
 ```
 
-You can also run the **Release** workflow manually from GitHub Actions and choose an existing tag, such as `v1.0.0`.
+You can also run the **Release** workflow manually from GitHub Actions and choose an existing tag, such as `v1.0.1`.
 
 ## Expected KOReader settings
 
