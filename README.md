@@ -69,6 +69,25 @@ build/jpackage/dmg/
 
 Both packaging tasks require macOS and a JDK 21 that includes `jpackage`.
 
+## Cross-platform releases
+
+JavaFX/jpackage packages are built natively per operating system. The project does not cross-compile a Windows installer from macOS; instead, GitHub Actions builds on macOS, Windows, and Linux runners.
+
+The release workflow creates:
+
+- macOS `.dmg`
+- Windows self-contained app image `.zip`
+- Linux self-contained app image `.tar.gz`
+
+To publish a release, push a tag:
+
+```bash
+git tag v1.0.1
+git push origin v1.0.1
+```
+
+You can also run the **Release** workflow manually from GitHub Actions and choose an existing tag, such as `v1.0.0`.
+
 ## Expected KOReader settings
 
 - Host: the IP address shown by KOReader.

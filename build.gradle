@@ -8,8 +8,10 @@ version = '1.0.0'
 
 def distAppName = 'lera-kindle-transfer'
 def macAppName = 'Lera Kindle Transfer'
+def os = org.gradle.internal.os.OperatingSystem.current()
+def platformName = os.isWindows() ? 'windows' : (os.isMacOsX() ? 'macos' : 'linux')
 def jpackageExecutable = providers.provider {
-    def executableName = org.gradle.internal.os.OperatingSystem.current().isWindows() ? 'jpackage.exe' : 'jpackage'
+    def executableName = os.isWindows() ? 'jpackage.exe' : 'jpackage'
     file("${System.getProperty('java.home')}/bin/${executableName}").absolutePath
 }
 
@@ -59,16 +61,33 @@ def jpackageArgs = { String imageType, File destDir ->
             '--dest', destDir.absolutePath,
             '--app-version', project.version.toString(),
             '--vendor', 'Lera Kindle Transfer',
-            '--java-options', '-Dfile.encoding=UTF-8',
-            '--mac-package-name', macAppName,
-            '--mac-package-identifier', 'com.lerakindletransfer.app'
+            '--java-options', '-Dfile.encoding=UTF-8'
     ]
 
-    def iconFile = file('packaging/LeraKindleTransfer.icns')
-    if (iconFile.exists()) {
-        args += ['--icon', iconFile.absolutePath]
+    if (os.isMacOsX()) {
+        args += [
+                '--mac-package-name', macAppName,
+                '--mac-package-identifier', 'com.lerakindletransfer.app'
+        ]
+        def iconFile = file('packaging/LeraKindleTransfer.icns')
+        if (iconFile.exists()) {
+            args += ['--icon', iconFile.absolutePath]
+        }
     }
     return args
+}
+
+tasks.register('packageAppImage', Exec) {
+    group = 'distribution'
+    description = 'Builds a self-contained app image for the current operating system using jpackage.'
+    dependsOn tasks.named('installDist')
+
+    doFirst {
+        def destDir = layout.buildDirectory.dir("jpackage/${platformName}/app-image").get().asFile
+        delete destDir
+        destDir.mkdirs()
+        commandLine jpackageExecutable.get(), *jpackageArgs('app-image', destDir)
+    }
 }
 
 tasks.register('packageMacApp', Exec) {

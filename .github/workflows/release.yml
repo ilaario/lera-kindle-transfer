@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish assets to"
+        required: true
+        default: "v1.0.0"
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Package (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            artifact-name: macos-dmg
+          - os: windows-latest
+            artifact-name: windows-app
+          - os: ubuntu-latest
+            artifact-name: linux-app
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Build macOS DMG
+        if: runner.os == 'macOS'
+        run: ./gradlew clean build packageMacDmg
+
+      - name: Build Windows app image
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          .\gradlew.bat clean build packageAppImage
+          New-Item -ItemType Directory -Force -Path build\release | Out-Null
+          Compress-Archive -Path "build\jpackage\windows\app-image\Lera Kindle Transfer" -DestinationPath "build\release\Lera-Kindle-Transfer-windows-x64.zip" -Force
+
+      - name: Build Linux app image
+        if: runner.os == 'Linux'
+        run: |
+          ./gradlew clean build packageAppImage
+          mkdir -p build/release
+          tar -C "build/jpackage/linux/app-image" -czf "build/release/Lera-Kindle-Transfer-linux-x64.tar.gz" "Lera Kindle Transfer"
+
+      - name: Upload macOS artifact
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: build/jpackage/dmg/*.dmg
+
+      - name: Upload Windows artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: build/release/*.zip
+
+      - name: Upload Linux artifact
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: build/release/*.tar.gz
+
+  publish:
+    name: Publish GitHub release
+    needs: package
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          files: release-artifacts/*
+          generate_release_notes: true
+          overwrite_files: true

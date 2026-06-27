@@ -7,8 +7,12 @@ on:
 
 jobs:
   build:
-    name: Gradle build
-    runs-on: macos-latest
+    name: Gradle build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
       - name: Check out repository
@@ -21,4 +25,10 @@ jobs:
           java-version: "21"
 
       - name: Build and test
+        if: runner.os != 'Windows'
         run: ./gradlew build
+
+      - name: Build and test
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: .\gradlew.bat build
