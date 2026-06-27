@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.lerakindletransfer'
-version = providers.gradleProperty('appVersion').orElse('1.0.1').get()
+version = providers.gradleProperty('appVersion').orElse('1.0.2').get()
 
 def distAppName = 'lera-kindle-transfer'
 def macAppName = 'Lera Kindle Transfer'
@@ -69,10 +69,12 @@ def jpackageArgs = { String imageType, File destDir ->
                 '--mac-package-name', macAppName,
                 '--mac-package-identifier', 'com.lerakindletransfer.app'
         ]
-        def iconFile = file('packaging/LeraKindleTransfer.icns')
-        if (iconFile.exists()) {
-            args += ['--icon', iconFile.absolutePath]
-        }
+    }
+    def iconFile = os.isMacOsX()
+            ? file('packaging/LeraKindleTransfer.icns')
+            : (os.isWindows() ? file('packaging/LeraKindleTransfer.ico') : file('packaging/LeraKindleTransfer.png'))
+    if (iconFile.exists()) {
+        args += ['--icon', iconFile.absolutePath]
     }
     return args
 }

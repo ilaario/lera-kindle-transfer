@@ -9,9 +9,10 @@ import com.lerakindletransfer.service.SftpTransferService;
 import javafx.application.Application;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.image.WritableImage;
-import javafx.scene.paint.Color;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
+
+import java.io.IOException;
 
 public final class MainApp extends Application {
     @Override
@@ -31,33 +32,22 @@ public final class MainApp extends Application {
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
 
         stage.setTitle("Lera Kindle Transfer");
-        stage.getIcons().add(createPlaceholderIcon());
+        Image appIcon = loadAppIcon();
+        if (appIcon != null) {
+            stage.getIcons().add(appIcon);
+        }
         stage.setMinWidth(760);
         stage.setMinHeight(620);
         stage.setScene(scene);
         stage.show();
     }
 
-    private WritableImage createPlaceholderIcon() {
-        int size = 64;
-        WritableImage image = new WritableImage(size, size);
-        for (int y = 0; y < size; y++) {
-            for (int x = 0; x < size; x++) {
-                boolean border = x < 6 || y < 6 || x >= size - 6 || y >= size - 6;
-                boolean spine = x >= 15 && x <= 20 && y >= 12 && y <= 52;
-                boolean page = x >= 22 && x <= 49 && y >= 12 && y <= 52;
-                Color color = Color.TRANSPARENT;
-                if (border) {
-                    color = Color.rgb(36, 48, 62);
-                } else if (spine) {
-                    color = Color.rgb(47, 111, 139);
-                } else if (page) {
-                    color = Color.rgb(238, 232, 217);
-                }
-                image.getPixelWriter().setColor(x, y, color);
-            }
+    private Image loadAppIcon() {
+        try (var iconStream = getClass().getResourceAsStream("/icons/lera-kindle-transfer.png")) {
+            return iconStream == null ? null : new Image(iconStream);
+        } catch (IOException ignored) {
+            return null;
         }
-        return image;
     }
 
     public static void main(String[] args) {

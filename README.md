@@ -82,11 +82,11 @@ The release workflow creates:
 To publish a release, push a tag:
 
 ```bash
-git tag v1.0.1
-git push origin v1.0.1
+git tag v1.0.2
+git push origin v1.0.2
 ```
 
-You can also run the **Release** workflow manually from GitHub Actions and choose an existing tag, such as `v1.0.1`.
+You can also run the **Release** workflow manually from GitHub Actions and choose an existing tag, such as `v1.0.2`.
 
 ## Expected KOReader settings
 
